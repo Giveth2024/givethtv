@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Giveth TV - Watch</title>
+  <link rel="stylesheet" href="player.css" />
+  <link
+    rel="shortcut icon"
+    href="https://i.pinimg.com/736x/ea/91/87/ea9187918597ea29f65a1e45bbaeeddc.jpg"
+    type="image/x-icon"
+  />
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
+
+</head>
+<body>
+  <header>
+    <button onclick="goBack()">⬅ Back</button>
+    <h1 id="channel-name">Loading...</h1>
+  </header>
+
+  <section class="player-container">
+    <video id="video-player" controls autoplay muted playsinline></video>
+  </section>
+
+  <section class="channel-info">
+    <img id="channel-logo" src="" alt="Logo" />
+    <div>
+      <h2 id="channel-title">Channel Info</h2>
+      <p id="channel-id">Channel ID: </p>
+    </div>
+  </section>
+
+<script src="player.js"></script>
+
+
+</body>
+</html>

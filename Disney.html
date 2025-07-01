@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Giveth TV - Watch</title>
+    <link rel="stylesheet" href="player.css" />
+    <link
+        rel="shortcut icon"
+        href="https://i.pinimg.com/736x/ea/91/87/ea9187918597ea29f65a1e45bbaeeddc.jpg"
+        type="image/x-icon"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
+</head>
+<body>
+    <header>
+        <button onclick="goBack()">⬅ Back</button>
+        <h1 id="channel-name">Loading...</h1>
+    </header>
+
+    <section class="player-container">
+        <video id="video-player" controls autoplay muted playsinline></video>
+    </section>
+
+    <section class="channel-info">
+        <img id="channel-logo" src="" alt="Logo" />
+        <div>
+            <h2 id="channel-title">Channel Info</h2>
+            <p id="channel-id">Channel ID: </p>
+        </div>
+    </section>
+
+    <script>
+        function goBack() {
+            window.location.href = "index.html";
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadChannelData();
+        });
+
+        function loadChannelData() {
+            const channelJson = localStorage.getItem('selectedChannel');
+            console.log("Retrieved channel JSON:", channelJson);
+
+            if (!channelJson) {
+                alert('No channel selected.');
+                goBack();
+                return;
+            }
+
+            const channel = JSON.parse(channelJson);
+            console.log("Parsed channel data:", channel);
+
+            // Populate header and channel info
+            document.getElementById('channel-name').textContent = channel.name;
+            document.getElementById('channel-title').textContent = channel.name;
+            document.getElementById('channel-id').textContent = `Channel ID: ${channel.id}`;
+            document.getElementById('channel-logo').src = channel.logo;
+
+            // Set up video player
+            const video = document.getElementById('video-player');
+            let videoUrl = channel.url;
+
+            // If needsProxy is true, use the proxy server
+            if (channel.needsProxy) {
+                videoUrl = `http://localhost:3001/proxy?url=${encodeURIComponent(channel.url)}`;
+                console.log("Using proxy for URL:", videoUrl);
+            } else {
+                console.log("Direct URL:", videoUrl);
+            }
+
+            if (Hls.isSupported()) {
+                const hls = new Hls({
+                       // Tweaks for smoother playback and less buffering
+                      maxBufferLength: 10, // Attempt to buffer 30 seconds ahead (default is 30)
+                      maxMaxBufferLength: 15, // Don't allow buffer to grow beyond 60 seconds (default is 600)
+                      liveSyncDurationCount: 3, // For live streams, try to keep buffer around 3 segments ahead
+                });
+                hls.loadSource(videoUrl);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    video.play();
+                });
+                hls.on(Hls.Events.ERROR, function (event, data) {
+                    if (data.fatal) {
+                        switch(data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                console.error("Fatal network error encountered, trying to recover...");
+                                hls.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                console.error("Fatal media error encountered, trying to recover...");
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                // Cannot recover
+                                hls.destroy();
+                                console.error("Fatal HLS error, cannot recover:", data);
+                                alert('Error playing channel. Please try again later.');
+                                goBack();
+                                break;
+                        }
+                    }
+                });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // For native HLS support (e.g., Safari on iOS)
+                video.src = videoUrl;
+                video.addEventListener('loadedmetadata', function() {
+                    video.play();
+                });
+            } else {
+                alert('Your browser does not support HLS video playback.');
+                goBack();
+            }
+        }
+    </script>
+</body>
+</html>
